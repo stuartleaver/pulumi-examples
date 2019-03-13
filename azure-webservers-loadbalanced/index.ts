@@ -6,17 +6,19 @@ const config = new pulumi.Config();
 const username = config.require("username");
 const password = config.require("password");
 
+// Require Module URL for the location of the DSC Extension script to install IIS.
+const moduleUrl = config.require("moduleUrl");
+
 // Create an Azure Resource Group
 const resourceGroup = new azure.core.ResourceGroup("pulumi", {
     location: "Southeast Asia",
 });
 
-// Create an Azure resource (Storage Account)
-const account = new azure.storage.Account("storage", {
+// Create the Public IP address
+const publicIP = new azure.network.PublicIp("server-one-ip", {
     resourceGroupName: resourceGroup.name,
     location: resourceGroup.location,
-    accountTier: "Standard",
-    accountReplicationType: "LRS",
+    allocationMethod: "Dynamic"
 });
 
 // Create the VNET for the webservers
@@ -24,27 +26,13 @@ const network = new azure.network.VirtualNetwork("server-network", {
     resourceGroupName: resourceGroup.name,
     location: resourceGroup.location,
     addressSpaces: ["10.0.0.0/16"],
-    // Workaround two issues:
-    // (1) The Azure API recently regressed and now fails when no subnets are defined at Network creation time.
-    // (2) The Azure Terraform provider does not return the ID of the created subnets - so this cannot actually be used.
-    subnets: [{
-        name: "default",
-        addressPrefix: "10.0.1.0/24",
-    }],
 });
 
 // Create the webservers Subnet
 const subnet = new azure.network.Subnet("server-subnet", {
     resourceGroupName: resourceGroup.name,
     virtualNetworkName: network.name,
-    addressPrefix: "10.0.2.0/24",
-});
-
-// Create the Public IP address
-const publicIP = new azure.network.PublicIp("server-one-ip", {
-    resourceGroupName: resourceGroup.name,
-    location: resourceGroup.location,
-    allocationMethod: "Static"
+    addressPrefix: "10.0.0.0/24",
 });
 
 // Create the NIC for the webserver
@@ -60,7 +48,7 @@ const networkInterface = new azure.network.NetworkInterface("server-one-nic", {
 });
 
 // Create the VM
-const vm = new azure.compute.VirtualMachine("webserver-one", {
+const vm = new azure.compute.VirtualMachine("server-one", {
     resourceGroupName: resourceGroup.name,
     location: resourceGroup.location,
     vmSize: "Standard_B2ms",
@@ -76,12 +64,29 @@ const vm = new azure.compute.VirtualMachine("webserver-one", {
         provisionVmAgent: true
     },
     storageOsDisk: {
-        name: "osdisk",
-        createOption: "FromImage"
+        name: "server-one_OSDisk",
+        caching: "ReadWrite",
+        createOption: "FromImage",
+        managedDiskType: "Standard_LRS",
     },
     osProfile: {
-        computerName: "webserver-one",
+        computerName: "server-one",
         adminUsername: username,
         adminPassword: password
     },
+});
+
+// Create the DSC extension to install IIS
+const contosoWebsite = new azure.compute.Extension("WidgetWebsite", {
+    location: resourceGroup.location,
+    publisher: "Microsoft.Powershell",
+    resourceGroupName: resourceGroup.name,
+    settings: `{
+      "modulesUrl": "${moduleUrl}",
+      "configurationFunction": "WidgetWebsite.ps1\\\\WidgetWebsite"
+    }`,
+    type: "DSC",
+    typeHandlerVersion: "2.19",
+    autoUpgradeMinorVersion: true,
+    virtualMachineName: vm.name,
 });
