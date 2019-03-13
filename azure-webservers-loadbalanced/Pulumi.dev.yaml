@@ -1,4 +1,0 @@
-config:
-  azure-webservers-loadbalanced:password: P4ssword!
-  azure-webservers-loadbalanced:username: sysadmin
-  azure:environment: public
