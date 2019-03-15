@@ -1,2 +1,8 @@
 /bin/
 /node_modules/
+
+#Ignore Pulumi stack config files
+Pulumi.dev.yaml
+
+# Ignore DSC Extension PowerShell file
+WidgetWebsite.ps1
