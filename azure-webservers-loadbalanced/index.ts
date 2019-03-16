@@ -6,8 +6,9 @@ const config = new pulumi.Config();
 const username = config.require("username");
 const password = config.require("password");
 
-// Require Module URL for the location of the DSC Extension script to install IIS.
-const moduleUrl = config.require("moduleUrl");
+// Require Module URL for the location of the DSC Extension script to install IIS. Also the
+// URL for the website files.
+const dscExtensionUrl = config.require("dscExtensionUrl");
 const websitePackageUri = config.require("websitePackageUri");
 
 // Create an Azure Resource Group
@@ -83,7 +84,7 @@ const contosoWebsite = new azure.compute.Extension("WidgetWebsite", {
     publisher: "Microsoft.Powershell",
     resourceGroupName: resourceGroup.name,
     settings: `{
-      "modulesUrl": "${moduleUrl}",
+      "modulesUrl": "${dscExtensionUrl}",
       "configurationFunction": "WidgetWebsite.ps1\\\\WidgetWebsite",
       "properties": {
             "WebsitePackageUri": "${websitePackageUri}"
