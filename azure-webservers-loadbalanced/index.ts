@@ -8,6 +8,7 @@ const password = config.require("password");
 
 // Require Module URL for the location of the DSC Extension script to install IIS.
 const moduleUrl = config.require("moduleUrl");
+const websitePackageUri = config.require("websitePackageUri");
 
 // Create an Azure Resource Group
 const resourceGroup = new azure.core.ResourceGroup("pulumi", {
@@ -83,7 +84,10 @@ const contosoWebsite = new azure.compute.Extension("WidgetWebsite", {
     resourceGroupName: resourceGroup.name,
     settings: `{
       "modulesUrl": "${moduleUrl}",
-      "configurationFunction": "WidgetWebsite.ps1\\\\WidgetWebsite"
+      "configurationFunction": "WidgetWebsite.ps1\\\\WidgetWebsite",
+      "properties": {
+            "WebsitePackageUri": "${websitePackageUri}"
+          }
     }`,
     type: "DSC",
     typeHandlerVersion: "2.19",
