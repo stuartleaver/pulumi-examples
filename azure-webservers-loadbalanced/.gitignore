@@ -4,5 +4,5 @@
 #Ignore Pulumi stack config files
 Pulumi.dev.yaml
 
-# Ignore DSC Extension PowerShell file
-WidgetWebsite.ps1
+#Ignore .DS_Store
+.DS_Store
